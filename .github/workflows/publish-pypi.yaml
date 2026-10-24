@@ -1,4 +1,4 @@
-#yaml-language-server: $schema=https://www.schemastore.org/github-action.json
+# yaml-language-server: $schema=https://www.schemastore.org/github-action.json
 
 name: Publish new release to PyPI
 
@@ -21,31 +21,35 @@ jobs:
           - { platform: linux, arch: amd64 }
           - { platform: linux, arch: arm64 }
           - { platform: linux, arch: armv6 }
-          - { platform: linux, arch: armv7 }
+          - { platform: linux, arch: armv7, os_version: "2.31" }
           - { platform: linux, arch: i386 }
 
+          - { platform: linux, arch: amd64, linux_libc: musllinux }
+          - { platform: linux, arch: arm64, linux_libc: musllinux }
+
           - { platform: macOS, arch: amd64 }
-          - { platform: macOS, arch: arm64 }
+          - { platform: macOS, arch: arm64, os_version: "11.0" }
 
           - { platform: windows, arch: amd64 }
           - { platform: windows, arch: arm64 }
 
-          - { platform: freebsd, arch: amd64 }
-          - { platform: freebsd, arch: arm64 }
-          - { platform: freebsd, arch: armv6 }
-          - { platform: freebsd, arch: armv7 }
-
-          - { platform: netbsd, arch: amd64 }
-          - { platform: netbsd, arch: arm64 }
-          - { platform: netbsd, arch: armv6 }
-          - { platform: netbsd, arch: armv7 }
-          - { platform: netbsd, arch: i386 }
-
-          - { platform: openbsd, arch: amd64 }
-          - { platform: openbsd, arch: arm64 }
-          - { platform: openbsd, arch: armv6 }
-          - { platform: openbsd, arch: armv7 }
-          - { platform: openbsd, arch: i386 }
+#         # Following are not supported by PyPI's standard platform tags
+#          - { platform: freebsd, arch: amd64 }
+#          - { platform: freebsd, arch: arm64 }
+#          - { platform: freebsd, arch: armv6 }
+#          - { platform: freebsd, arch: armv7 }
+#
+#          - { platform: netbsd, arch: amd64 }
+#          - { platform: netbsd, arch: arm64 }
+#          - { platform: netbsd, arch: armv6 }
+#          - { platform: netbsd, arch: armv7 }
+#          - { platform: netbsd, arch: i386 }
+#
+#          - { platform: openbsd, arch: amd64 }
+#          - { platform: openbsd, arch: arm64 }
+#          - { platform: openbsd, arch: armv6 }
+#          - { platform: openbsd, arch: armv7 }
+#          - { platform: openbsd, arch: i386 }
 
     steps:
       - name: Check out repository
@@ -65,12 +69,14 @@ jobs:
             --version "${TAG#v}" \
             --platform "${{ matrix.platform }}" \
             --arch "${{ matrix.arch }}" \
+            --os-version "${{ matrix.os_version }}" \
+            --linux-libc "${{ matrix.linux_libc }}" \
             --output-dir dist
 
       - name: Upload wheel
         uses: actions/upload-artifact@v7
         with:
-          name: wheel-${{ matrix.platform }}-${{ matrix.arch }}
+          name: wheel-${{ matrix.platform }}-${{ matrix.arch }}${{ matrix.linux_libc && format('-{0}', matrix.linux_libc) || '' }}
           path: packages/python-doppler-cli/dist/*.whl
           if-no-files-found: error
 
