@@ -4,12 +4,14 @@ import base64
 import hashlib
 import io
 import re
+import sys
 import tarfile
 import tomllib
 import urllib.error
 import urllib.request
 import zipfile
 from email.message import EmailMessage
+from email.policy import default
 from pathlib import Path, PurePosixPath
 
 
@@ -117,7 +119,10 @@ def generate_metadata(version: str) -> bytes:
     project = config["project"]
     urls = project.get("urls", {})
 
-    metadata = EmailMessage()
+    #Override email policy so it doesn't wrap long text
+    policy = default.clone(max_line_length=sys.maxsize)
+    metadata = EmailMessage(policy=policy)
+
     metadata["Metadata-Version"] = "2.4"
     metadata["Name"] = project["name"]
     metadata["Version"] = version
@@ -133,6 +138,10 @@ def generate_metadata(version: str) -> bytes:
 
     for classifier in project.get("classifiers", []):
         metadata["Classifier"] = classifier
+
+    keywords = project.get("keywords", [])
+    if keywords:
+        metadata["Keywords"] = ", ".join(keywords)
 
     if isinstance(project.get("readme"), str):
         readme_path = ROOT / project["readme"]

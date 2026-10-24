@@ -10,7 +10,24 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
     "License :: OSI Approved :: MIT License",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Utilities",
+    "Topic :: Security",
     "Intended Audience :: Developers",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Operating System :: MacOS",
+]
+keywords = [
+    "cli",
+    "doppler",
+    "doppler cli",
+    "environment variables",
+    "app secrets",
+    "app config",
+    "api keys",
+    "os.environ",
 ]
 
 requires-python = ">=3.10"
