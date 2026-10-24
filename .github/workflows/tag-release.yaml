@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Doppler CLI release version (for example, 3.77.1)"
+        description: "Doppler CLI release version (example: 3.77.1)"
         required: true
         type: string
 
@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   release-tag:
+    name: Create new release tag
     runs-on: ubuntu-26.04
     permissions:
       contents: write
