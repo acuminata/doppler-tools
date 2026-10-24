@@ -247,7 +247,7 @@ def build_wheel(
     output_dir: Path,
     wheel_platform: str,
 ) -> Path:
-    distribution = "doppler_cli"
+    distribution = "doppler_bin"
     dist_info = f"{distribution}-{version}.dist-info"
     tag = f"py3-none-{wheel_platform}"
     wheel_name = f"{distribution}-{version}-{tag}.whl"
