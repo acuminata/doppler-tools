@@ -54,7 +54,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7.1.0
         with:
-          python-version: "3.9"
+          python-version-file: packages/python-doppler-cli/pyproject.toml
 
       - name: Build wheel
         working-directory: packages/python-doppler-cli
