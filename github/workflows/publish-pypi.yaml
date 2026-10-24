@@ -1,0 +1,98 @@
+#yaml-language-server: $schema=https://www.schemastore.org/github-action.json
+
+name: Publish new release to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }} / ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: linux, arch: amd64 }
+          - { platform: linux, arch: arm64 }
+          - { platform: linux, arch: armv6 }
+          - { platform: linux, arch: armv7 }
+          - { platform: linux, arch: i386 }
+
+          - { platform: macOS, arch: amd64 }
+          - { platform: macOS, arch: arm64 }
+
+          - { platform: windows, arch: amd64 }
+          - { platform: windows, arch: arm64 }
+
+          - { platform: freebsd, arch: amd64 }
+          - { platform: freebsd, arch: arm64 }
+          - { platform: freebsd, arch: armv6 }
+          - { platform: freebsd, arch: armv7 }
+
+          - { platform: netbsd, arch: amd64 }
+          - { platform: netbsd, arch: arm64 }
+          - { platform: netbsd, arch: armv6 }
+          - { platform: netbsd, arch: armv7 }
+          - { platform: netbsd, arch: i386 }
+
+          - { platform: openbsd, arch: amd64 }
+          - { platform: openbsd, arch: arm64 }
+          - { platform: openbsd, arch: armv6 }
+          - { platform: openbsd, arch: armv7 }
+          - { platform: openbsd, arch: i386 }
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.9"
+
+      - name: Build wheel
+        working-directory: packages/python-doppler-cli
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          python scripts/build_wheel.py \
+            --version "${TAG#v}" \
+            --platform "${{ matrix.platform }}" \
+            --arch "${{ matrix.arch }}" \
+            --output-dir dist
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v7
+        with:
+          name: wheel-${{ matrix.platform }}-${{ matrix.arch }}
+          path: packages/python-doppler-cli/dist/*.whl
+          if-no-files-found: error
+
+  publish:
+    name: Publish wheels to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/doppler-bin
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download all wheels
+        uses: actions/download-artifact@v8
+        with:
+          pattern: wheel-*
+          path: dist/
+          merge-multiple: true
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.14.3
