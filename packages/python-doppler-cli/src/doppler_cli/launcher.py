@@ -13,7 +13,7 @@ def _binary_path() -> Path:
     if not executable.is_file():
         raise FileNotFoundError(
             f"Doppler executable is missing: {executable}. "
-            "Reinstall the doppler-cli package."
+            "Reinstall the doppler-bin package."
         )
 
     return executable

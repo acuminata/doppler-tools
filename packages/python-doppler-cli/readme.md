@@ -1,4 +1,3 @@
-
 # Doppler CLI
 
 The Doppler CLI distributed as platform-specific Python wheels.
@@ -8,7 +7,7 @@ The Doppler CLI distributed as platform-specific Python wheels.
 Install a version matching the Doppler CLI release:
 
 ```bash
-python -m pip install doppler-cli==3.77.1
+python -m pip install doppler-bin==3.77.1
 ```
 
 Verify the installation:

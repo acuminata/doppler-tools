@@ -1,5 +1,5 @@
 [project]
-name = "doppler-cli"
+name = "doppler-bin"
 version = "0.0.0"
 
 description = "Doppler CLI executable distributed as Python wheels"
