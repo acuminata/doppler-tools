@@ -1,0 +1,30 @@
+[project]
+name = "doppler-cli"
+version = "0.0.0"
+
+description = "Doppler CLI executable distributed as Python wheels"
+readme = "readme.md"
+license = "MIT"
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+]
+
+requires-python = ">=3.14"
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project.urls]
+Homepage = "https://github.com/DopplerHQ/cli#usage"
+Repository = "https://github.com/acuminata/doppler-tools.git"
+
+[project.scripts]
+doppler = "doppler_cli.launcher:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/doppler_cli"]
