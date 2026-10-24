@@ -12,9 +12,11 @@
     "secrets",
     "environment-variables"
   ],
-  "files": ["src/"],
+  "files": [
+    "src/"
+  ],
   "bin": {
-    "doppler": "./src/cli.mjs"
+    "doppler": "src/cli.mjs"
   },
   "scripts": {
     "preinstall": "node src/install.mjs"
@@ -26,7 +28,7 @@
   "homepage": "https://github.com/DopplerHQ/cli#usage",
   "repository": {
     "type": "git",
-    "url": "https://github.com/acuminata/doppler-tools.git"
+    "url": "git+https://github.com/acuminata/doppler-tools.git"
   },
   "bugs": {
     "url": "https://github.com/acuminata/doppler-tools/issues"
