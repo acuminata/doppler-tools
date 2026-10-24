@@ -181,7 +181,7 @@ def platform_tag(platform: str, arch: str, macos_version: str = "10-13") -> str:
     if cpu is None:
         return None
 
-    return f"{os_name}_{cpu}"
+    return f"{os_name}_{cpu}".replace("-", "_")
 
 
 def build_wheel(
