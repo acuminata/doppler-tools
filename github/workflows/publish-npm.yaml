@@ -1,0 +1,48 @@
+#yaml-language-server: $schema=https://www.schemastore.org/github-action.json
+
+name: Publish new release to npm
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: npm
+
+    permissions:
+      contents: read
+      id-token: write # Needed to authenticate with npm via OIDC
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: 'packages/node-doppler-cli/package.json'
+
+      - name: Update package.json version
+        working-directory: packages/node-doppler-cli
+        env:
+          TAG: ${{ github.ref_name }}
+        run: npm version "${TAG#v}" --no-git-tag-version
+
+      - name: Validate JavaScript syntax
+        working-directory: packages/node-doppler-cli
+        run: |
+          node --check src/cli.mjs
+          node --check src/install.mjs
+
+      - name: Verify package contents
+        run: npm pack --dry-run
+        working-directory: packages/node-doppler-cli
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        working-directory: packages/node-doppler-cli
