@@ -3,7 +3,6 @@ import argparse
 import base64
 import hashlib
 import io
-import os
 import re
 import tarfile
 import tomllib
@@ -27,11 +26,20 @@ def record_line(name: str, data: bytes) -> str:
     return f"{name},sha256={digest(data)},{len(data)}"
 
 
+def normalize_platform(platform: str) -> str:
+    aliases = {
+        "win": "windows",
+        "mac os": "macos",
+        "darwin": "macos",
+    }
+    value = platform.strip().lower()
+    return aliases.get(value, value)
+
+
 def download_asset(version: str, platform: str, arch: str) -> bytes:
+    platform = normalize_platform(platform)
     extension = "zip" if platform == "windows" else "tar.gz"
-
     filename = f"doppler_{version}_{platform}_{arch}.{extension}"
-
     url = "https://github.com/DopplerHQ/cli/releases/download/" f"{version}/{filename}"
 
     request = urllib.request.Request(
@@ -56,6 +64,7 @@ def extract_executable(
     archive_data: bytes,
     platform: str,
 ) -> tuple[str, bytes]:
+    platform = normalize_platform(platform)
     expected = "doppler.exe" if platform == "windows" else "doppler"
 
     if platform == "windows":
@@ -73,30 +82,30 @@ def extract_executable(
                 )
 
             return expected, archive.read(candidates[0])
-    else:
-        with tarfile.open(
-            fileobj=io.BytesIO(archive_data),
-            mode="r:gz",
-        ) as archive:
-            candidates = [
-                item
-                for item in archive.getmembers()
-                if item.isfile() and PurePosixPath(item.name).name == expected
-            ]
 
-            if len(candidates) != 1:
-                raise RuntimeError(
-                    f"Expected exactly one {expected} in tarball; "
-                    f"found {len(candidates)}"
-                )
+    with tarfile.open(
+        fileobj=io.BytesIO(archive_data),
+        mode="r:gz",
+    ) as archive:
+        candidates = [
+            item
+            for item in archive.getmembers()
+            if item.isfile() and PurePosixPath(item.name).name == expected
+        ]
 
-            member = candidates[0]
-            source = archive.extractfile(member)
+        if len(candidates) != 1:
+            raise RuntimeError(
+                f"Expected exactly one {expected} in tarball; "
+                f"found {len(candidates)}"
+            )
 
-            if source is None:
-                raise RuntimeError(f"Unable to read executable {member.name}")
+        member = candidates[0]
+        source = archive.extractfile(member)
 
-            return expected, source.read()
+        if source is None:
+            raise RuntimeError(f"Unable to read executable {member.name}")
+
+        return expected, source.read()
 
 
 def generate_metadata(version: str) -> bytes:
@@ -126,7 +135,7 @@ def generate_metadata(version: str) -> bytes:
         metadata["Classifier"] = classifier
 
     if isinstance(project.get("readme"), str):
-        readme_path = ROOT / project.get("readme")
+        readme_path = ROOT / project["readme"]
 
         if readme_path.is_file():
             metadata.set_content(
@@ -146,42 +155,87 @@ def generate_metadata(version: str) -> bytes:
     return metadata.as_bytes()
 
 
-def platform_tag(platform: str, arch: str, macos_version: str = "10-13") -> str:
-    platforms = {
-        "linux": "linux",
-        "macos": f"macosx-{macos_version}",
-        "mac os": f"macosx-{macos_version}",
-        "darwin": f"macosx-{macos_version}",
-        "windows": "win",
-        "win": "win",
-        "freebsd": "freebsd",
-        "netbsd": "netbsd",
-        "openbsd": "openbsd",
-    }
+def platform_tag(
+    platform: str,
+    arch: str,
+    os_version: str | None = None,
+    linux_libc: str | None = None,
+) -> str | None:
+    platform = normalize_platform(platform)
 
     architectures = {
-        "amd64": "x86-64",
-        "x86_64": "x86-64",
-        "x64": "x86-64",
-        "i386": "i386",
+        "amd64": "x86_64",
+        "x86_64": "x86_64",
+        "x64": "x86_64",
+        "i386": "i686",
         "i686": "i686",
+        "x86": "i686",
         "arm64": "aarch64",
         "aarch64": "aarch64",
-        "armv6": "armv6",
-        "armv7": "armv7",
-        "armv7l": "armv7",
-        "x86": "i386",
+        "armv6": "armv6l",
+        "armv6l": "armv6l",
+        "armv7": "armv7l",
+        "armv7l": "armv7l",
     }
 
-    os_name = platforms.get(platform.lower())
-    cpu = architectures.get(arch.lower())
-
-    if os_name is None:
-        return None
+    cpu = architectures.get(arch.strip().lower())
     if cpu is None:
         return None
 
-    return f"{os_name}_{cpu}".replace("-", "_")
+    # normalize empty strings
+    os_version = os_version or None
+    linux_libc = linux_libc or None
+
+    if platform in {"linux", "manylinux", "musllinux"}:
+        libc = (linux_libc or platform).strip().lower()
+
+        if libc == "linux":
+            libc = "manylinux"
+
+        if libc == "manylinux":
+            version = os_version or "2.17"
+            prefix = "manylinux"
+        elif libc == "musllinux":
+            version = os_version or "1.2"
+            prefix = "musllinux"
+        else:
+            return None
+
+        if not re.fullmatch(r"\d+\.\d+", version):
+            return None
+
+        return f"{prefix}_{version.replace('.', '_')}_{cpu}"
+
+    if platform in {"macos", "macosx"}:
+        version = os_version or "10.13"
+        version = version.replace("-", ".")
+
+        if not re.fullmatch(r"\d+\.\d+", version):
+            return None
+
+        mac_cpu = {
+            "x86_64": "x86_64",
+            "i686": "i386",
+            "aarch64": "arm64",
+        }.get(cpu)
+
+        if mac_cpu is None:
+            return None
+
+        major, minor = version.split(".")
+        return f"macosx_{major}_{minor}_{mac_cpu}"
+
+    if platform == "windows":
+        return {
+            "x86_64": "win_amd64",
+            "i686": "win32",
+            "aarch64": "win_arm64",
+        }.get(cpu)
+
+    if platform in {"freebsd", "netbsd", "openbsd"}:
+        return f"{platform}_{cpu}"
+
+    return None
 
 
 def build_wheel(
@@ -191,9 +245,8 @@ def build_wheel(
     executable_name: str,
     executable_data: bytes,
     output_dir: Path,
+    wheel_platform: str,
 ) -> Path:
-    wheel_platform = platform_tag(platform, arch)
-
     distribution = "doppler_cli"
     dist_info = f"{distribution}-{version}.dist-info"
     tag = f"py3-none-{wheel_platform}"
@@ -201,7 +254,7 @@ def build_wheel(
 
     package_files = {
         "doppler_cli/__init__.py": (
-            f'"""Doppler CLI executable distribution."""\n'
+            '"""Doppler CLI executable distribution."""\n'
             f'__version__ = "{version}"\n'
         ).encode("utf-8"),
         "doppler_cli/launcher.py": (PACKAGE_DIR / "launcher.py").read_bytes(),
@@ -221,7 +274,6 @@ def build_wheel(
     record_name = f"{dist_info}/RECORD"
     rows = [record_line(name, data) for name, data in package_files.items()]
     rows.append(f"{record_name},,")
-
     package_files[record_name] = ("\n".join(rows) + "\n").encode("utf-8")
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -252,6 +304,19 @@ def main() -> None:
     parser.add_argument("--version", required=True)
     parser.add_argument("--platform", required=True)
     parser.add_argument("--arch", required=True)
+    parser.add_argument(
+        "--os-version",
+        help=(
+            "OS compatibility version. Defaults to 2.17 for manylinux, "
+            "1.2 for musllinux, and 10.13 for macOS"
+        ),
+        default=None,
+    )
+    parser.add_argument(
+        "--linux-libc",
+        help="Linux libc compatibility target (choose from 'manylinux', 'musllinux')",
+        default=None,
+    )
     parser.add_argument("--output-dir", default="dist")
     args = parser.parse_args()
 
@@ -260,14 +325,30 @@ def main() -> None:
     if not re.fullmatch(r"\d+\.\d+\.\d+(?:[a-zA-Z0-9.+!-]*)?", version):
         raise SystemExit(f"Invalid release version: {version}")
 
-    target = platform_tag(args.platform, args.arch)
+    # Normalize empty string or validate choices manually
+    if args.linux_libc == "":
+        args.linux_libc = None
+    elif args.linux_libc not in (None, "manylinux", "musllinux"):
+        parser.error(
+            f"argument --linux-libc: invalid choice: {args.linux_libc!r} (choose from 'manylinux', 'musllinux')"
+        )
+
+    platform = normalize_platform(args.platform)
+
+    target = platform_tag(
+        platform,
+        args.arch,
+        os_version=args.os_version,
+        linux_libc=args.linux_libc,
+    )
+
     if target is None:
         raise SystemExit(f"Unsupported build target: {args.platform}/{args.arch}")
 
-    archive_data = download_asset(version, args.platform, args.arch)
+    archive_data = download_asset(version, platform, args.arch)
     executable_name, executable_data = extract_executable(
         archive_data,
-        args.platform,
+        platform,
     )
 
     if not executable_data:
@@ -275,11 +356,12 @@ def main() -> None:
 
     build_wheel(
         version=version,
-        platform=args.platform,
+        platform=platform,
         arch=args.arch,
         executable_name=executable_name,
         executable_data=executable_data,
         output_dir=Path(args.output_dir),
+        wheel_platform=target,
     )
 
 
