@@ -12,10 +12,7 @@
     "secrets",
     "environment-variables"
   ],
-  "files": [
-    "src/",
-    "readme.md"
-  ],
+  "files": ["src/"],
   "bin": {
     "doppler": "./src/cli.mjs"
   },
