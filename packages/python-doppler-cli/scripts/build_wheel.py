@@ -168,6 +168,25 @@ def generate_metadata(version: str) -> bytes:
     for classifier in project.get("classifiers", []):
         metadata["Classifier"] = classifier
 
+    if isinstance(project.get("readme"), str):
+        readme_path = ROOT / project.get("readme")
+
+        if readme_path.is_file():
+            metadata.set_content(
+                readme_path.read_text(encoding="utf-8"),
+                subtype="plain",
+                charset="utf-8",
+                cte="8bit",
+            )
+            #set description header
+            metadata["Description-Content-Type"]= "text/markdown; charset=UTF-8"
+
+            #delete extra headers
+            del metadata["Content-Type"]
+            del metadata["Content-Transfer-Encoding"]
+            del metadata["MIME-Version"]
+
+
     return metadata.as_bytes()
 
 
