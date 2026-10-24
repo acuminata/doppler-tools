@@ -51,7 +51,29 @@ function detectArmArchitecture() {
     throw new Error(`Unsupported 32-bit ARM architecture: ${machine}`);
 }
 
-function resolveTarget() {
+async function latestVersion() {
+    const url = "https://api.github.com/repos/DopplerHQ/cli/releases/latest";
+    const response = await fetch(url, {
+        headers: {Accept: "application/vnd.github+json"},
+        signal: AbortSignal.timeout(15_000),
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to resolve latest Doppler CLI release: HTTP ${response.status}`);
+    }
+
+    const release = await response.json();
+    const version = release.tag_name?.replace(/^v/, "");
+
+    if (!version || release.draft || release.prerelease) {
+        throw new Error("GitHub returned an invalid latest stable release");
+    }
+
+    return version;
+
+}
+
+async function resolveTarget() {
     const platform = PLATFORMS[process.platform];
 
     if (!platform) {
@@ -64,7 +86,7 @@ function resolveTarget() {
         throw new Error(`Unsupported architecture: ${process.arch}`);
     }
 
-    const version = packageJSON.version;
+    const version = packageJSON.version === '0.0.0' ? await latestVersion() : packageJSON.version;
     const extension = platform === "windows" ? "zip" : "tar.gz";
     const filename = `doppler_${version}_${platform}_${architecture}.${extension}`;
 
@@ -209,7 +231,7 @@ async function extractTarGz(response, executableFilename, destination) {
 }
 
 async function main() {
-    const target = resolveTarget();
+    const target = await resolveTarget();
 
     console.log(`Downloading Doppler CLI ${target.version}`);
     console.log(target.url);

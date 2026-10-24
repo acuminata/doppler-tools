@@ -1,7 +1,7 @@
 {
   "name": "doppler-cli",
   "private": false,
-  "version": "3.77.1",
+  "version": "0.0.0",
   "type": "module",
   "description": "Doppler CLI binary distribution for Node.js",
   "license": "MIT",
