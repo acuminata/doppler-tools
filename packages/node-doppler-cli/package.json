@@ -1,0 +1,47 @@
+{
+  "name": "doppler-cli",
+  "private": false,
+  "version": "3.77.1",
+  "type": "module",
+  "description": "Doppler CLI binary distribution for Node.js",
+  "license": "MIT",
+  "keywords": [
+    "doppler",
+    "cli",
+    "command-line",
+    "secrets",
+    "environment-variables"
+  ],
+  "files": [
+    "src/",
+    "readme.md"
+  ],
+  "bin": {
+    "doppler": "./src/cli.mjs"
+  },
+  "scripts": {
+    "preinstall": "node src/install.mjs"
+  },
+  "dependencies": {
+    "tar": "^7.5.22",
+    "yauzl": "^3.4.0"
+  },
+  "homepage": "https://github.com/DopplerHQ/cli#usage",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/acuminata/doppler-tools.git"
+  },
+  "bugs": {
+    "url": "https://github.com/acuminata/doppler-tools/issues"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=v24.22.1"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11.19.1"
+    }
+  }
+}
