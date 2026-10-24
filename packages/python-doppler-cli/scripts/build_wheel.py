@@ -17,38 +17,6 @@ from pathlib import Path, PurePosixPath
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_DIR = ROOT / "src" / "doppler_cli"
 
-# Asset platform, asset architecture, and corresponding wheel platform tag.
-WHEEL_PLATFORMS = {
-    ("linux", "amd64"): "linux_x86_64",
-    ("linux", "arm64"): "linux_aarch64",
-    ("linux", "armv6"): "linux_armv6l",
-    ("linux", "armv7"): "linux_armv7l",
-    ("linux", "i386"): "linux_i686",
-
-    ("macOS", "amd64"): "macosx_10_13_x86_64",
-    ("macOS", "arm64"): "macosx_11_0_arm64",
-
-    ("windows", "amd64"): "win_amd64",
-    ("windows", "arm64"): "win_arm64",
-
-    ("freebsd", "amd64"): "freebsd_amd64",
-    ("freebsd", "arm64"): "freebsd_arm64",
-    ("freebsd", "armv6"): "freebsd_armv6",
-    ("freebsd", "armv7"): "freebsd_armv7",
-
-    ("netbsd", "amd64"): "netbsd_amd64",
-    ("netbsd", "arm64"): "netbsd_arm64",
-    ("netbsd", "armv6"): "netbsd_armv6",
-    ("netbsd", "armv7"): "netbsd_armv7",
-    ("netbsd", "i386"): "netbsd_i386",
-
-    ("openbsd", "amd64"): "openbsd_amd64",
-    ("openbsd", "arm64"): "openbsd_arm64",
-    ("openbsd", "armv6"): "openbsd_armv6",
-    ("openbsd", "armv7"): "openbsd_armv7",
-    ("openbsd", "i386"): "openbsd_i386",
-}
-
 
 def digest(data: bytes) -> str:
     value = hashlib.sha256(data).digest()
@@ -190,6 +158,43 @@ def generate_metadata(version: str) -> bytes:
     return metadata.as_bytes()
 
 
+def platform_tag(platform: str, arch: str, macos_version: str = "10-13") -> str:
+    platforms = {
+        "linux": "linux",
+        "macos": f"macosx-{macos_version}",
+        "mac os": f"macosx-{macos_version}",
+        "darwin": f"macosx-{macos_version}",
+        "windows": "win",
+        "win": "win",
+        "freebsd": "freebsd",
+        "netbsd": "netbsd",
+        "openbsd": "openbsd",
+    }
+
+    architectures = {
+        "amd64": "x86-64",
+        "x86_64": "x86-64",
+        "x64": "x86-64",
+        "i386": "i386",
+        "i686": "i686",
+        "arm64": "aarch64",
+        "aarch64": "aarch64",
+        "armv6": "armv6",
+        "armv7": "armv7",
+        "armv7l": "armv7",
+        "x86": "i386",
+    }
+
+    os_name = platforms.get(platform.lower())
+    cpu = architectures.get(arch.lower())
+
+    if os_name is None:
+        return None
+    if cpu is None:
+        return None
+
+    return f"{os_name}-{cpu}"
+
 def build_wheel(
     version: str,
     platform: str,
@@ -198,7 +203,7 @@ def build_wheel(
     executable_data: bytes,
     output_dir: Path,
 ) -> Path:
-    wheel_platform = WHEEL_PLATFORMS[(platform, arch)]
+    wheel_platform = platform_tag(platform, arch)
 
     distribution = "doppler_cli"
     dist_info = f"{distribution}-{version}.dist-info"
@@ -274,9 +279,8 @@ def main() -> None:
     if not re.fullmatch(r"\d+\.\d+\.\d+(?:[a-zA-Z0-9.+!-]*)?", version):
         raise SystemExit(f"Invalid release version: {version}")
 
-    key = (args.platform, args.arch)
-
-    if key not in WHEEL_PLATFORMS:
+    target = platform_tag(args.platform, args.arch)
+    if target is None:
         raise SystemExit(
             f"Unsupported build target: {args.platform}/{args.arch}"
         )
