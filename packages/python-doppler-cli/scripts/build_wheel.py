@@ -30,14 +30,9 @@ def record_line(name: str, data: bytes) -> str:
 def download_asset(version: str, platform: str, arch: str) -> bytes:
     extension = "zip" if platform == "windows" else "tar.gz"
 
-    filename = (
-        f"doppler_{version}_{platform}_{arch}.{extension}"
-    )
+    filename = f"doppler_{version}_{platform}_{arch}.{extension}"
 
-    url = (
-        "https://github.com/DopplerHQ/cli/releases/download/"
-        f"{version}/{filename}"
-    )
+    url = "https://github.com/DopplerHQ/cli/releases/download/" f"{version}/{filename}"
 
     request = urllib.request.Request(
         url,
@@ -54,9 +49,7 @@ def download_asset(version: str, platform: str, arch: str) -> bytes:
             f"Failed to download {url}: HTTP {exc.code} {exc.reason}"
         ) from exc
     except urllib.error.URLError as exc:
-        raise RuntimeError(
-            f"Unable to download {url}: {exc.reason}"
-        ) from exc
+        raise RuntimeError(f"Unable to download {url}: {exc.reason}") from exc
 
 
 def extract_executable(
@@ -70,8 +63,7 @@ def extract_executable(
             candidates = [
                 item
                 for item in archive.infolist()
-                if not item.is_dir()
-                and PurePosixPath(item.filename).name == expected
+                if not item.is_dir() and PurePosixPath(item.filename).name == expected
             ]
 
             if len(candidates) != 1:
@@ -89,8 +81,7 @@ def extract_executable(
             candidates = [
                 item
                 for item in archive.getmembers()
-                if item.isfile()
-                and PurePosixPath(item.name).name == expected
+                if item.isfile() and PurePosixPath(item.name).name == expected
             ]
 
             if len(candidates) != 1:
@@ -103,9 +94,7 @@ def extract_executable(
             source = archive.extractfile(member)
 
             if source is None:
-                raise RuntimeError(
-                    f"Unable to read executable {member.name}"
-                )
+                raise RuntimeError(f"Unable to read executable {member.name}")
 
             return expected, source.read()
 
@@ -146,14 +135,13 @@ def generate_metadata(version: str) -> bytes:
                 charset="utf-8",
                 cte="8bit",
             )
-            #set description header
-            metadata["Description-Content-Type"]= "text/markdown; charset=UTF-8"
+            # set description header
+            metadata["Description-Content-Type"] = "text/markdown; charset=UTF-8"
 
-            #delete extra headers
+            # delete extra headers
             del metadata["Content-Type"]
             del metadata["Content-Transfer-Encoding"]
             del metadata["MIME-Version"]
-
 
     return metadata.as_bytes()
 
@@ -195,6 +183,7 @@ def platform_tag(platform: str, arch: str, macos_version: str = "10-13") -> str:
 
     return f"{os_name}-{cpu}"
 
+
 def build_wheel(
     version: str,
     platform: str,
@@ -215,9 +204,7 @@ def build_wheel(
             f'"""Doppler CLI executable distribution."""\n'
             f'__version__ = "{version}"\n'
         ).encode("utf-8"),
-        "doppler_cli/launcher.py": (
-            PACKAGE_DIR / "launcher.py"
-        ).read_bytes(),
+        "doppler_cli/launcher.py": (PACKAGE_DIR / "launcher.py").read_bytes(),
         f"doppler_cli/bin/{executable_name}": executable_data,
         f"{dist_info}/METADATA": generate_metadata(version),
         f"{dist_info}/WHEEL": (
@@ -227,21 +214,15 @@ def build_wheel(
             f"Tag: {tag}\n"
         ).encode("utf-8"),
         f"{dist_info}/entry_points.txt": (
-            "[console_scripts]\n"
-            "doppler = doppler_cli.launcher:main\n"
+            "[console_scripts]\n" "doppler = doppler_cli.launcher:main\n"
         ).encode("utf-8"),
     }
 
     record_name = f"{dist_info}/RECORD"
-    rows = [
-        record_line(name, data)
-        for name, data in package_files.items()
-    ]
+    rows = [record_line(name, data) for name, data in package_files.items()]
     rows.append(f"{record_name},,")
 
-    package_files[record_name] = (
-        "\n".join(rows) + "\n"
-    ).encode("utf-8")
+    package_files[record_name] = ("\n".join(rows) + "\n").encode("utf-8")
 
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / wheel_name
@@ -281,9 +262,7 @@ def main() -> None:
 
     target = platform_tag(args.platform, args.arch)
     if target is None:
-        raise SystemExit(
-            f"Unsupported build target: {args.platform}/{args.arch}"
-        )
+        raise SystemExit(f"Unsupported build target: {args.platform}/{args.arch}")
 
     archive_data = download_asset(version, args.platform, args.arch)
     executable_name, executable_data = extract_executable(
