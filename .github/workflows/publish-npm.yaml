@@ -9,6 +9,7 @@ on:
 
 jobs:
   release:
+    name: Publish new release to npm
     runs-on: ubuntu-26.04
 
     environment:
