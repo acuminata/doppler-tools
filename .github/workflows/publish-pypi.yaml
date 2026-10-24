@@ -20,7 +20,7 @@ jobs:
         include:
           - { platform: linux, arch: amd64 }
           - { platform: linux, arch: arm64 }
-          - { platform: linux, arch: armv6 }
+#          - { platform: linux, arch: armv6 }
           - { platform: linux, arch: armv7, os_version: "2.31" }
           - { platform: linux, arch: i386 }
 
