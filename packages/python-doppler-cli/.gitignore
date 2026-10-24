@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+src/doppler_cli/bin/doppler
+src/doppler_cli/bin/doppler.exe
