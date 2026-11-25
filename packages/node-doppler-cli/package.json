@@ -7,6 +7,7 @@
   "license": "MIT",
   "keywords": [
     "doppler",
+    "doppler-cli",
     "cli",
     "command-line",
     "secrets",

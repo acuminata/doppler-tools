@@ -3,17 +3,38 @@
 The Doppler CLI distributed as a platform-specific npm package.
 
 ## Installation
+Install `doppler-bin` using your preferred package manager.
 
-Install a version matching the Doppler CLI release:
+**Important:** This package requires running a `preinstall` script to download the platform-specific Doppler executable. Some package managers require explicitly approving dependency installation scripts.
 
-```bash
-npm install doppler-bin
+### npm
+
+```shell
+npm install -D doppler-bin
+npm install-scripts approve doppler-bin
+```
+### Bun
+```shell
+bun add -D --trust doppler-bin
+```
+### pnpm
+```shell
+pnpm add -D doppler-bin
+pnpm approve-builds
 ```
 
-Verify the installation:
+
+Verify the installation through your package manager:
 
 ```bash
+# Using npm:
 npx doppler --version
+
+# Using bun:
+#bunx doppler --version
+
+# Using pnpm:
+#pnpm dlx doppler --version
 ```
 
 Use the CLI as usual:
